@@ -1,5 +1,16 @@
 from helpers import *
 
+def overall_sentiment(row):
+    # If the sentiment of one component is neutral and the other negative, the overall sentiment is negative
+    if (row['text'] == 0 and row['image'] == 2) or (row['image'] == 2 and row['text'] == 0):
+        return 0
+    # If the sentiment of one component is positive and the other neutral, the overall sentiment is positive
+    elif (row['text'] == 1 and row['image'] == 2) or (row['image'] == 2 and row['text'] == 1):
+        return 1
+
+    # Both components have the same sentiment
+    return row['text']
+
 class DataSet:
     def __init__(self, current_working_directory):
         self.dataset_name = 'MVSA_Single' # dataset name: MVSA_Single/MVSA_Multi
@@ -13,6 +24,12 @@ class DataSet:
         labels = pd.read_csv('labels.csv', sep='\t').dropna()
         labels = labels.sort_values(by = ['ID'])
         labels = labels.replace(sentiment_label)
+        labels['overall_sentiment'] = labels.apply(lambda row: overall_sentiment(row), axis=1)
+
+        # print('Distribuția claselor în %{self.dataset_name}:')
+        # print('Text:\n', labels['text'].value_counts())
+        # print('Images:\n', labels['image'].value_counts())
+        # print('Posts:\n', labels['overall_sentiment'].value_counts())
         
         # load raw data into variable from the text and image files
         os.chdir(self.texts_path)
@@ -87,9 +104,17 @@ class DataSet:
         df_text_val['text'] = df_text_val['text'].apply(lambda x : re.sub(retweets_reg, ' ', x))
         df_text_test['text'] = df_text_test['text'].apply(lambda x : re.sub(retweets_reg, ' ', x))
 
-        print(df_text_train.head())
-        print(df_text_val.head())
-        print(df_text_test.head())
+        # Apply the padding strategy
+        train_text_lengths = df_text_train['text'].apply(lambda x : len(x.split(' ')))
+        val_text_lengths = df_text_val['text'].apply(lambda x : len(x.split(' ')))
+        test_text_lengths = df_text_test['text'].apply(lambda x : len(x.split(' ')))
+
+        self.max_text_length = int(max(np.mean(train_text_lengths), np.mean(val_text_lengths), \
+            np.mean(test_text_lengths))) + 5
+
+        # print(df_text_train.head())
+        # print(df_text_val.head())
+        # print(df_text_test.head())
 
         images_train = get_images(self.images_path, image_files_train)
         images_val = get_images(self.images_path, image_files_val)
@@ -119,8 +144,21 @@ class DataSet:
         self.__X_images_test = images_test
         self.__y_images_train = y_train['image'].values
         self.__y_images_val = y_val['image'].values
-        self.__y_images_test = y_val['image'].values
+        self.__y_images_test = y_test['image'].values
 
+        # self.__y_post_train = self.get_labels(y_train['text'].values, y_train['image'].values)
+        # self.__y_post_val = self.get_labels(y_val['text'].values, y_val['image'].values)
+        # self.__y_post_test = self.get_labels(y_test['text'].values, y_test['image'].values)
+        self.__y_post_train = y_train['overall_sentiment'].values
+        self.__y_post_val = y_val['overall_sentiment'].values
+        self.__y_post_test = y_test['overall_sentiment'].values
+
+    def get_labels(self, y_text, y_images):
+        y_text, y_images = np.array(y_text), np.array(y_images)
+        y_post = [get_label(a, b) for a, b in zip(y_text, y_images)]
+        y_post = np.array(y_post).astype('float32')
+
+        return y_post
 
     @property
     def text_train(self):
@@ -128,11 +166,11 @@ class DataSet:
 
     @property
     def text_validation(self):
-        return np.array(self.__X_text_train, dtype = str)
+        return np.array(self.__X_text_val, dtype = str)
 
     @property
     def text_test(self):
-        return np.array(self.__X_text_train, dtype = str)
+        return np.array(self.__X_text_test, dtype = str)
 
     @property
     def images_train(self):
@@ -169,3 +207,126 @@ class DataSet:
     @property
     def image_test_labels(self):
         return np.array(self.__y_images_test).astype('float32')
+
+    @property
+    def post_train_labels(self):
+        return self.__y_post_train
+
+    @property
+    def post_val_labels(self):
+        return self.__y_post_val
+
+    @property
+    def post_test_labels(self):
+        return self.__y_post_test
+
+
+class TextDataset(Dataset):
+    def __init__(self, X, y, max_length, device):
+        self.X = X
+        self.y = y
+        self.max_length = max_length
+        self.device = device
+
+        # Initialize the BERT tokenizer
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    def get_punctuation_indexes(self, tokens):
+        indexes = []
+        for idx, token in enumerate(tokens[:-1]):
+            if token in punctuation and not tokens[idx + 1] in punctuation:
+                indexes.append(idx)
+
+        return indexes
+
+    def add_special_tokens(self, tokens, punctuation_indexes):
+        for i, index in enumerate(punctuation_indexes):
+            tokens = tokens[:index + i + 1] + ['[SEP]'] + tokens[index + i + 1:]
+
+        tokens = ['[CLS]'] + tokens + ['[SEP]']
+        return tokens
+
+    def __len__(self):
+        return len(self.y)
+
+    def __getitem__(self, idx):
+        sample = self.X[idx]
+        label = self.y[idx]
+
+        # Pre-processing the data to be suitable for the BERT model
+        tokens = self.tokenizer.tokenize(sample)
+        indexes = self.get_punctuation_indexes(tokens)
+        tokens = self.add_special_tokens(tokens, indexes)
+
+        if len(tokens) < self.max_length:
+            tokens = tokens + ['[PAD]' for _ in range(self.max_length - len(tokens))]
+        else:
+            tokens = tokens[:self.max_length-1] + ['[SEP]'] # Prunning the list to be of specified max length
+
+        # Obtaining the indices of the tokens in the BERT Vocabulary
+        tokens_ids = self.tokenizer.convert_tokens_to_ids(tokens) 
+        tokens_ids = torch.tensor(tokens_ids, device=self.device) 
+
+        # Obtaining the attention mask i.e a tensor containing 1s for no padded tokens and 0s for padded ones
+        attn_mask = (tokens_ids != 0).long()
+        attn_mask = torch.tensor(attn_mask, device=self.device)
+
+        label = torch.tensor(label, device=self.device)
+
+        return tokens_ids, attn_mask, label
+
+
+class MultimodalDataset(Dataset):
+    def __init__(self, X_image, X_text, y, max_length):
+        self.X = X_text
+        self.X_image = X_image
+        self.y = y
+        self.max_length = max_length
+
+        # Initialize the BERT tokenizer
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    def get_punctuation_indexes(self, tokens):
+        indexes = []
+        for idx, token in enumerate(tokens[:-1]):
+            if token in punctuation and not tokens[idx + 1] in punctuation:
+                indexes.append(idx)
+
+        return indexes
+
+    def add_special_tokens(self, tokens, punctuation_indexes):
+        for i, index in enumerate(punctuation_indexes):
+            tokens = tokens[:index + i + 1] + ['[SEP]'] + tokens[index + i + 1:]
+
+        tokens = ['[CLS]'] + tokens + ['[SEP]']
+        return tokens
+
+    def __len__(self):
+        return len(self.y)
+
+    def __getitem__(self, idx):
+        sample = self.X[idx]
+        image = self.X_image[idx]
+        label = self.y[idx]
+
+        # Pre-processing the data to be suitable for the BERT model
+        tokens = self.tokenizer.tokenize(sample)
+        indexes = self.get_punctuation_indexes(tokens)
+        tokens = self.add_special_tokens(tokens, indexes)
+
+        if len(tokens) < self.max_length:
+            tokens = tokens + ['[PAD]' for _ in range(self.max_length - len(tokens))]
+        else:
+            tokens = tokens[:self.max_length-1] + ['[SEP]'] # Prunning the list to be of specified max length
+
+        # Obtaining the indices of the tokens in the BERT Vocabulary
+        tokens_ids = self.tokenizer.convert_tokens_to_ids(tokens) 
+        tokens_ids = torch.tensor(tokens_ids) 
+
+        # Obtaining the attention mask i.e a tensor containing 1s for no padded tokens and 0s for padded ones
+        attn_mask = (tokens_ids != 0).long()
+        attn_mask = torch.tensor(attn_mask)
+
+        label = torch.tensor(label)
+
+        return tokens_ids, attn_mask, image, label
