@@ -330,3 +330,4 @@ class MultimodalDataset(Dataset):
         label = torch.tensor(label)
 
         return tokens_ids, attn_mask, image, label
+        

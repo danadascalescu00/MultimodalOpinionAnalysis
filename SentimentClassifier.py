@@ -44,12 +44,12 @@ class AttentionLayer(nn.Module):
         self.u = u
 
         self.tanh = torch.nn.Tanhshrink()
+        # self.tanh = torch.nn.Tanh()
 
     def forward(self, visual_reps, contextual_text_reps):
         num_tokens = list(contextual_text_reps.size())[1]
         scene_object_reps = torch.repeat_interleave(visual_reps, repeats=num_tokens, dim=1)
         scene_object_reps = scene_object_reps.reshape(list(contextual_text_reps.size()))
-
 
         weighted_cont_reps = torch.matmul(contextual_text_reps, self.W_w)
         weighted_visual_reps = torch.matmul(scene_object_reps, self.W_os)
@@ -92,16 +92,19 @@ class SentimentClassifier(nn.Module):
         self.attention_layer = AttentionLayer(768)
         self.linear2 = nn.Linear(in_features=1536, out_features=768)
         self.relu2 = nn.ReLU()
-        self.linear3 = nn.Linear(in_features=768, out_features=num_classes)
+        self.linear3 = nn.Linear(in_features=768, out_features=384)
+        self.relu3 = nn.ReLU()
+        self.linear4 = nn.Linear(in_features=384, out_features=num_classes)
         self.softmax = nn.Softmax(dim=1)
 
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.3)
+        self.dropout2 = nn.Dropout(0.15)
 
         self.count_epochs = 1
 
 
     def forward(self, sequences, attn_masks, images, unfreeze_bert=True):
-        if self.count_epochs >= 4:
+        if self.count_epochs >= 10:
             self.vgg_model.eval()
             self.alexnet_model.eval()
 
@@ -134,8 +137,9 @@ class SentimentClassifier(nn.Module):
         attn = cls_rep * attn_mask
 
         multimodal_reps = torch.cat((visual_reps, attn), dim=1)
-        V_mul = self.relu2(self.linear2(multimodal_reps))
-        pred = self.softmax(self.linear3(V_mul))
+        V_mul = self.relu2(self.dropout(self.linear2(multimodal_reps)))
+        V_int = self.relu3(self.dropout2(self.linear3(V_mul)))
+        pred = self.softmax(self.linear4(V_int))
 
         self.count_epochs += 1
 

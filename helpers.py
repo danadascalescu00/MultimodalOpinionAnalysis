@@ -263,3 +263,4 @@ def plot_losses(train_loss, val_loss, test_loss):
     pyplot.plot(test_loss, label = "Test Loss", color = "red")
     pyplot.legend()
     pyplot.show()
+    

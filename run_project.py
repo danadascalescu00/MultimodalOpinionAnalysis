@@ -183,7 +183,7 @@ def run_sentiment_classifier(train_loader, validation_loader, test_loader, param
             if acc_test > best_test_accuracy:
                 print("Best test accuracy improved from {} to {}, saving model...".format(best_test_accuracy, acc_test))
                 best_test_accuracy = acc_test
-                torch.save(model, os.path.join('C:\\Users\\Dana\\Desktop\\Licenta\\OpinionMining\\SaveFiles\\SentimentClassifier', 'model2_{:.0f}_{:.0f}'.format(acc_test * 100, f1_pn * 100 )))
+                torch.save(model, os.path.join('C:\\Users\\Dana\\Desktop\\Licenta\\OpinionMining\\SaveFiles\\SentimentClassifier', 'model10_{:.0f}_{:.0f}'.format(acc_test * 100, f1_pn * 100 )))
             
             test_accuracy.append(acc_test)
             test_loss.append(loss_test)
@@ -200,7 +200,7 @@ if __name__ == "__main__":
 
     params: Parameters = Parameters()
     params.use_cuda = torch.cuda.is_available()
-    params.epochs = 20
+    params.epochs = 40
     params.print_every = 20
 
     random.seed(params.SEED)
@@ -214,9 +214,9 @@ if __name__ == "__main__":
     dataset: DataSet = DataSet(params.cwd)
 
     # Creating data loaders for the text and image input from the train, validation and test sets
-    multimodal_dataset_train: MultimodalDataset = MultimodalDataset(dataset.images_train, dataset.text_train, dataset.post_train_labels, 25)
-    multimodal_dataset_val: MultimodalDataset = MultimodalDataset(dataset.images_validation, dataset.text_validation, dataset.post_val_labels, 25)
-    multimodal_dataset_test: MultimodalDataset = MultimodalDataset(dataset.images_test, dataset.text_test, dataset.post_test_labels, 25)
+    multimodal_dataset_train: MultimodalDataset = MultimodalDataset(dataset.images_train, dataset.text_train, dataset.post_train_labels, 32)
+    multimodal_dataset_val: MultimodalDataset = MultimodalDataset(dataset.images_validation, dataset.text_validation, dataset.post_val_labels, 32)
+    multimodal_dataset_test: MultimodalDataset = MultimodalDataset(dataset.images_test, dataset.text_test, dataset.post_test_labels, 32)
 
 
     multimodal_train_loader = DataLoader(multimodal_dataset_train, batch_size = params.batch_size)

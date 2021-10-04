@@ -1,6 +1,7 @@
 """
     Emoticons data
 """
+
 import re
 from emoji import demojize
 
