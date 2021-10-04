@@ -19,7 +19,7 @@ With the increasing amount of user-generated content on social media platforms, 
   
   <div> <p> <b>Tabel 1. </b> Results obtained by the proposed model</p> </div>
 
-We compare the results obtained by the proposed model with the following basic methods, as well as with three modern methods, which have proven to be proven to be superior to the traditiona methods:
+We compare the results obtained by the proposed model with the following basic methods, as well as with three modern methods, which have proven to be superior to the traditional methods:
   
 |           Method &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;  MVSA-Single <br> &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;&ensp;&emsp;&emsp;&emsp;&ensp;   _________________<br>  &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;&ensp;       Acc &emsp;&emsp;&ensp; F |
 |----------------------------------------------------------------|
