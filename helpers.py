@@ -136,8 +136,6 @@ def read_textfile(path):
 def get_text_dataframe(path, text_filenames):
     df_text = [read_textfile(join_path(path, file)) for file in text_filenames]
     df_text = pd.DataFrame(df_text, columns = ['text'])
-    # df_text = [pd.read_csv(join_path(path, file)) for file in text_filenames]
-    # df_text = rearrange_text_dataframe(df_text)
     return df_text
 
 
@@ -189,10 +187,6 @@ def get_label(a, b):
         return 1
     else:
         return a
-
-
-# def remove_stopwords(text):
-#   return " ".join([word for word in str(text).split() if word not in STOPWORDS])
 
 
 def split_attached_words(text):

@@ -112,10 +112,6 @@ class DataSet:
         self.max_text_length = int(max(np.mean(train_text_lengths), np.mean(val_text_lengths), \
             np.mean(test_text_lengths))) + 5
 
-        # print(df_text_train.head())
-        # print(df_text_val.head())
-        # print(df_text_test.head())
-
         images_train = get_images(self.images_path, image_files_train)
         images_val = get_images(self.images_path, image_files_val)
         images_test = get_images(self.images_path, image_files_test)

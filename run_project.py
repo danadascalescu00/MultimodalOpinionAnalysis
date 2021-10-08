@@ -214,9 +214,9 @@ if __name__ == "__main__":
     dataset: DataSet = DataSet(params.cwd)
 
     # Creating data loaders for the text and image input from the train, validation and test sets
-    multimodal_dataset_train: MultimodalDataset = MultimodalDataset(dataset.images_train, dataset.text_train, dataset.post_train_labels, 32)
-    multimodal_dataset_val: MultimodalDataset = MultimodalDataset(dataset.images_validation, dataset.text_validation, dataset.post_val_labels, 32)
-    multimodal_dataset_test: MultimodalDataset = MultimodalDataset(dataset.images_test, dataset.text_test, dataset.post_test_labels, 32)
+    multimodal_dataset_train: MultimodalDataset = MultimodalDataset(dataset.images_train, dataset.text_train, dataset.post_train_labels, 36)
+    multimodal_dataset_val: MultimodalDataset = MultimodalDataset(dataset.images_validation, dataset.text_validation, dataset.post_val_labels, 36)
+    multimodal_dataset_test: MultimodalDataset = MultimodalDataset(dataset.images_test, dataset.text_test, dataset.post_test_labels, 36)
 
 
     multimodal_train_loader = DataLoader(multimodal_dataset_train, batch_size = params.batch_size)

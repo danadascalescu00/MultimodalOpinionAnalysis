@@ -98,15 +98,15 @@ class SentimentClassifier(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
         self.dropout = nn.Dropout(0.3)
-        self.dropout2 = nn.Dropout(0.15)
+        self.dropout2 = nn.Dropout(0.25)
 
         self.count_epochs = 1
 
 
     def forward(self, sequences, attn_masks, images, unfreeze_bert=True):
-        if self.count_epochs >= 10:
-            self.vgg_model.eval()
-            self.alexnet_model.eval()
+        # if self.count_epochs >= 10:
+        #     self.vgg_model.eval()
+        #     self.alexnet_model.eval()
 
         if unfreeze_bert:
             for params in self.bert_model.parameters():
