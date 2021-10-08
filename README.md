@@ -3,10 +3,11 @@
 *Opinion Polarity Classification:* Given a tweet consisting of an image and text, classify the post on three-point scale (positive, neutral or negative sentiment towards that post).
 
 ## Table of Content
-* [Introduction](#introduction)
-* [Proposed architecture](#proposed-architecture)
-* [Results](#experiments-and-results)
-* [Conclusions](#conclusions)
+* [Introduction](#1-introduction)
+* [Proposed architecture](#2-proposed-architecture)
+* [Experiments and results](#3-experiments-and-results)
+* [Conclusions](#4-conclusions)
+* [References](#5-references)
 
 ## 1. Introduction
 
@@ -16,7 +17,7 @@ With the increasing amount of user-generated content on social media platforms, 
 
 The proposed architecture is inspired by the paper [_MultiSentiNet: A DeepSemantic Network for Multimodal Sentiment Analysis_](https://dl.acm.org/doi/10.1145/3132847.3133142), in which the authors come up with a mechanism of attention guided by visual characteristics.
 
-We use **Object-VGG** for extracting visual characteristics related to objects, **Scene365-AlexNet** as a scene detector and **BERT** model for extracting textual characteristics. We adopt the transfer learning methodology and thus, we transfer the previously learned parameters on large data sets, in our opinion analysis task.
+We use **Object-VGG**[[2]](#2) for extracting visual characteristics related to objects, **Scene365-AlexNet**[[4]](#4) as a scene detector and **BERT**[[1]](#1) model for extracting textual characteristics. We adopt the transfer learning methodology and thus, we transfer the previously learned parameters on large data sets, in our opinion analysis task.
 
 In the case of the models used to extract the visual characteristics, we extract the output of the last fully connected layer and obtain two vectors of non-normalized scores that indicate the probabilities of 1000 categories of objects, respectively the probabilities of 365 categories of scenes. From the BERT model we extract the hidden states of each token from the input sequence after it have been passed through a series of self-attention layers (h<sub>t</sub>), as well as the hidden representation of the [CLS_REP] token after being additionally passed to a completely connected layer with the _tanh_ activation function. Specifically, we use the last layer of the BERT-base model to obtained a fixed dimensional representation of the input sequence.
 
@@ -33,11 +34,11 @@ To bring the feature vectors to the same dimensionality, we use d neurons, where
 <p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<sup>where</sup> <img src="https://latex.codecogs.com/svg.latex?ReLU(x)=max(0,x)" width=160>.</p>
 </p>
 
-In the following, we will present the attention mechanism that extracts the keywords for detecting the polarity of the text, using the visual characteristics, and then aggregates the keywords with the contextual information at the level of the entire text. The method is inspiredd by the paper [_Hierarchical Attention Networks for Document Classification_](https://aclanthology.org/N16-1174) where the authors proposed an attention mechanism applied both at text level and at sentence level for classifying documents.
+In the following, we will present the attention mechanism that extracts the keywords for detecting the polarity of the text, using the visual characteristics, and then aggregates the keywords with the contextual information at the level of the entire text. The method is inspired by the paper [_Hierarchical Attention Networks for Document Classification_](https://aclanthology.org/N16-1174) where the authors proposed an attention mechanism applied both at text level and at sentence level for classifying documents.
 
 To generate the deep hidden representation <i>u<sub>t</sub></i>, we feed each hidden state of a token <i>h̅<sub>t</sub></i>, where <i>h̅<sub>t</sub></i> in <i>h<sub>t</sub></i>, with the visual feature V<sub>OS</sub> to a linear layer:
 <p align="center">
- <img src="https://latex.codecogs.com/svg.latex?u_t%20=%20Tanhshrink(W_w%20*%20\overline{h_t}%20+%20W_{os}%20*%20I_{os}%20+%20b),%20\quad%20u_t%20\in%20R^{num\_tokens%20\times%20d}">
+ <img src="https://latex.codecogs.com/svg.latex?u_t%20=%20Tanhshrink(W_w%20*%20\overline{h_t}%20+%20W_{os}%20*%20V_{os}%20+%20b),%20\quad%20u_t%20\in%20R^{num\_tokens%20\times%20d}">
 <p style="font-size:32px">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<sup> where <i>num_tokens</i> represents the size of the input sequence, number of tokens, and &nbsp;</sup> <img src="https://latex.codecogs.com/svg.latex?Tanhshrink(x)=x-Tanh(x)" width=220>.</p>
 </p>
 
@@ -79,7 +80,7 @@ In general, a post that contains both an image and the corresponding text can ac
   <b>Figure 2.</b> Samples from the MVSA dataset
 </p>
 
-Therefore, to ensure a correct evaluation, we use the approach presented in [[1]](#1), where posts in which one of the labels is positive and the other negative are eliminated.
+Therefore, to ensure a correct evaluation, we use the approach presented in [[3]](#3), where posts in which one of the labels is positive and the other negative are eliminated.
 If one of the components of the post belongs to the neutral class, and the other component belongs to the positive and negative class, respectively, the general feeling of the post will be positive and negative, respectively.
 
 The data set is randomly split into a training set, a validation set, and a test set using an 8:1:1 ratio.
@@ -97,33 +98,55 @@ Before pre-processing the data, it is essential to understand the distribution o
 **Textual features.** The data is pre-processed in two stages before extracting the textual features necessary in the following training steps. The first stage consists of the following procedure:
 * Emoticons and emojis are replaced with the corresponding descriptive words.
 * The text is decoded and then normalized, i.e., the data is transformed from complex symbols into simple characters. Characters can be subjected to various forms of encoding, such as Latin, ISO/IEC 8859-1, etc. Therefore, for better analysis, it is necessary to keep the data in a standard encoding format. For this requirement, we choose UTF-8 encoding because it is widely accepted and often recommended.
-* The URL addresses are replaced by the <URL> token. Hyperlinks are removed, as well as the old-style for highlighting redistributed posts.
+* The URL addresses are replaced by the \<URL\> token. Hyperlinks are removed, as well as the old-style for highlighting redistributed posts.
 * We eliminate all email addresses.
 * Bounded words are separated by inserting a space. Most posts on social networks such as Facebook, Twitter, or Instagram contain one or more words without spaces and are preceded by the # sign such as #MentalHealthAwarenessWeek or #BeautifulDay, called a hashtag. A hashtag is a tag that makes it easy to find posts in a specific category or with certain content. Therefore, the words in the hashtags provide essential information about the general feeling of the post.
 * We eliminate all numeric and special characters except the period, question mark, and exclamation mark.
 * Any letter repeated more than three times in a row is replaced by two repetitions of the same letter as the usual rules of English spelling forbid triple letters (for example "cooool" is replaced by "cool").
 
-**Visual features.**
+After finishing the first preprocessing step, the textual component of the post is processed to match the input format expected by the BERT model. Each text sequence is divided into individual language units, specific vocabulary tokens using the _BertTokenizer_ method. In the same process, the uppercase characters are converted to lowercase characters.
 
-| Accuracy   |      Average Recall      | F</sup><sub>1</sub><sup>PN |
-|------------|:------------------------:|-------------:|
-| 75.41 |  73.09 | 71.26 |
+Each input sequence begins with a [CLS] token, the embeddings of which are used for sentence-level classification. Similarly, each sequence ends with the [SEP] token. In the case of multi-sentence posts, an [SEP] token is inserted to separate the sentences. For example, the input sequence "Greetings Tweetarians !! I have just landed on your Planet." will be transformed in "['[CLS]', 'greeting', '##s', 't', '##wee', '##tarian', '##s', '!', '!', '[SEP]', 'i', 'have', 'just', 'landed', 'on', 'your', 'planet', '.', '[SEP]']".
+
+It is necessary for each sequence to have the same dimensionality n', where n' is equal to 36, approximately the average number of words in a tweet plus the average number of tokens needed to separate the sentences. As a consequence, sequences containing fewer tokens are filled with the [PAD] token, and those containing more tokens are reduced to the first n'-1 tokens and the [SEP] token is appended at the end. We also do not want the end result to be influenced by the tokens used for padding. For this, we will use the attention mechanism of the BERT model, so that, when calculating the representations of each input token, no attention is given to the [PAD] tokens. We accomplish this by providing an attention mask along with distributed representations of words. The attention mask consists of a tensor that contains values of 0 for [PAD] tokens and 1 for the rest.
+
+The last step of the second stage of textual data processing consists in replacing the tokens we obtained by following the above steps with their corresponding indices from the BERT vocabulary, obtaining a tensor i, with <img src="https://latex.codecogs.com/svg.latex?i\in%20R^{n%27%20\times%20d}">.
+
+**Visual features.** Pictures are resized to 256x256 pixels and converted to black and white images. First, the input sequence is selected by extracting 224x224 random patches from the four corners with respect to the center of the image. Then, we flipped horizontally these five patches, so a total of 10 patches will result. Finally, the patches are sent as input parameters to two pre-trained, individual networks, Object-VGG and Scene365-AlexNet to extract the visual features. 
+
+#### 3.2.2 Model trainning
+We use Cross-Entropy Loss Function and AdamW optimizer for the training process. We set the learning rate to 2e-5, the size of mini-batch to 32, the dimension of word-embeddings to 36. In order to avoid overfitting dropouts and dynamically updating the learning rate tricks are also employed.
+
+### 3.3 Results
+#### 3.3.1 Evaluation measures
+The main measures for evaluating the model are **_accuracy_** and <img src="https://latex.codecogs.com/svg.latex?F_1^{PN}">.  The last one is the average of the <img src="https://latex.codecogs.com/svg.latex?F_1"> values calculated for the positive and negative classes, respectively. It is calculated as follows:
+
+<p align="center">
+ <img src="https://latex.codecogs.com/svg.latex?F_1^{PN}=\frac{1}{2}(F_1^P%20+%20F_1^N)">
+</p>
+
+Moving forward, we use the average recall value as a secondary measure to evaluate the model, because this measure has the desirable theoretical properties for this task. It is calculated as follows:
+
+<p align="center">
+ <img src="https://latex.codecogs.com/svg.latex?AvgRec=\frac{1}{3}(R^{N}+R^{U}+R^{P})">
+</p>
+
+where <img src="https://latex.codecogs.com/svg.latex?R^{N}">, <img src="https://latex.codecogs.com/svg.latex?R^{U}"> and <img src="https://latex.codecogs.com/svg.latex?R^{P}"> are the recall values for the NEGATIVE, NEUTRAL and POSITIVE classes. <img src="https://latex.codecogs.com/svg.latex?F_1"> is also sensitive to class imbalance for the same reason presented above.
+
+The advantage of the AvgRec value over the standard accuracy is that it is more robust to the class imbalance. The accuracy of the majority class classifier is the relative frequency, known as the majority class prevalence, which can be greater than 0.5 if the test set is highly unbalanced. Another advantage of AvgRec over F<sub>1</sub> is that AvgRec is invariant in switching the POSITIVE class with the NEGATIVE class, while <img src="https://latex.codecogs.com/svg.latex?F_1^{PN}"> is not.
+
+#### 3.3.2 Experiments 
+The results of the proposed model can be observed in the following table:
+
+![image](https://user-images.githubusercontent.com/48893255/136593495-2ce29466-f948-4b28-8c18-84e15ea82a30.png)
   
-  <div> <p> <b>Tabel 1. </b> Results obtained by the proposed model</p> </div>
+&emsp; **Tabel 2.** Results obtained by the proposed model
 
 We compare the results obtained by the proposed model with the following basic methods, as well as with three modern methods, which have proven to be superior to the traditional methods:
   
-|           Method &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;  MVSA-Single <br> &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;&ensp;&emsp;&emsp;&emsp;&ensp;   _________________<br>  &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;&ensp;       Acc &emsp;&emsp;&ensp; F |
-|----------------------------------------------------------------|
-| SentiBank+SentiStrength &emsp;&emsp;&emsp;&ensp;&ensp;&ensp;  52.05 &emsp;&ensp; 50.08 |
-|  CNN_Multi      &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;&emsp;&ensp;&nbsp;&nbsp;     61.20 &emsp;&ensp; 58.37                 |
-|  	HSAN          &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;     66.83 &emsp;&ensp; 66.90      |
-|  	MultiSentiNet &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;&ensp;&ensp;&ensp;&nbsp;     69.84 &emsp;&ensp; 69.63       |
-|  	COMN_Hop6     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;    70.51 &emsp;&ensp; 70.01        |
-|  	FeNet-Glove   &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;&nbsp;    72.54 &emsp;&ensp; 72.32     |
-|  	FeNet-BERT    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;    74.21 &emsp;&ensp; 74.06      |
+![image](https://user-images.githubusercontent.com/48893255/136593887-6a9a2424-0c01-44aa-b692-af9c67f745c7.png)
 
-  <div> <p> <b>Tabel 2. </b> Comparative results of different methods </p> </div>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; **Tabel 3.** Comparative results of different methods
   
 ## 4. Conclusions
 
@@ -131,4 +154,12 @@ The experiments showed that the visual information can consolidate the textual i
 At the same time, we can conclude that in trying to solve complex problems such as opinion analysis, choosing pre-trained models and using components from already defined network architectures can be very useful.
   
 ## 5. References
-  <a id="1">[1]</a> Xu, Nan and Mao, Wenji (2017). MultiSentiNet: A Deep Semantic Network for Multimodal Sentiment Analysis.
+  <a id="1">[1]</a> Jacob Devlin et al. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.
+  
+  <a id="2">[2]</a> Karen Simonyan and Andrew Zisserman. Very Deep Convolutional Networks for
+Large-Scale Image Recognition. 2015.
+
+  <a id="3">[3]</a> Nan Xu and Wenji Mao. “MultiSentiNet: A Deep Semantic Network for Multimodal Sentiment Analysis”. In: Proceedings of the 2017 ACM on Conference on
+Information and Knowledge Management. CIKM ’17. Singapore, Singapore: Association for Computing Machinery, 2017, pp. 2399–2402.
+
+  <a id="4">[4]</a> Zhou, Bolei and Lapedriza, Agata and Khosla, Aditya and Oliva, Aude and Torralba, Antonio. Places: A 10 million Image Database for Scene Recognition
