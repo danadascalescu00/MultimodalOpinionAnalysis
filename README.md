@@ -4,14 +4,106 @@
 
 ## Table of Content
 * [Introduction](#introduction)
-* [Results](#results)
+* [Proposed architecture](#proposed-architecture)
+* [Results](#experiments-and-results)
 * [Conclusions](#conclusions)
 
-## Introduction
+## 1. Introduction
 
-With the increasing amount of user-generated content on social media platforms, such as Twitter, commercial enterprises and researchers in various fields of study become more and more interested in automatically finding the general public's opinion on a particualr topic. Until recently, the research was based on textual data, and only small efforts were made to analyze the various types of  data collected from posts on social media. Most of the previous approaches to multimodal opinion analysis are based on extracting features from each data type and combining them for classification using the late-fusion strategy. Consequently, some key semantic information was ignored, as well as the inherent correlations between all components of a post. Through this project, my bachelor's thesis, I wanted to make a real contribution to the existing methods of multimodal sentiment analysis by developing a deep neural network that weights the correlation between the image and the text. The development of the proposed model consists in integrating three models through transfer learning in a single approach to obtain the characteristics of each type of data and aggregating the two sources of information through an attention mechanism to extracting the inherent correlations from text and image of a post. The results of the experiments performed on a public dataset for multimodal sentiment analysis demonstrate the effectiveness of the proposed model.
+With the increasing amount of user-generated content on social media platforms, such as Twitter, commercial enterprises and researchers in various fields of study become more and more interested in automatically finding the general public's opinion on a particular topic. Until recently, the research was based on textual data, and only small efforts were made to analyze the various types of  data collected from posts on social media. Most of the previous approaches to multimodal opinion analysis are based on extracting features from each data type and combining them for classification using the late-fusion strategy. Consequently, some key semantic information was ignored, as well as the inherent correlations between all components of a post. Through this project, my bachelor's thesis, I wanted to make a real contribution to the existing methods of multimodal sentiment analysis by developing a deep neural network that weights the correlation between the image and the text. The development of the proposed model consists in integrating three models through transfer learning in a single approach to obtain the characteristics of each type of data and aggregating the two sources of information through an attention mechanism to extracting the inherent correlations from text and image of a post. The results of the experiments performed on a public dataset for multimodal sentiment analysis demonstrate the effectiveness of the proposed model.
 
-## Results
+## 2. Proposed architecture
+
+The proposed architecture is inspired by the paper [_MultiSentiNet: A DeepSemantic Network for Multimodal Sentiment Analysis_](https://dl.acm.org/doi/10.1145/3132847.3133142), in which the authors come up with a mechanism of attention guided by visual characteristics.
+
+We use **Object-VGG** for extracting visual characteristics related to objects, **Scene365-AlexNet** as a scene detector and **BERT** model for extracting textual characteristics. We adopt the transfer learning methodology and thus, we transfer the previously learned parameters on large data sets, in our opinion analysis task.
+
+In the case of the models used to extract the visual characteristics, we extract the output of the last fully connected layer and obtain two vectors of non-normalized scores that indicate the probabilities of 1000 categories of objects, respectively the probabilities of 365 categories of scenes. From the BERT model we extract the hidden states of each token from the input sequence after it have been passed through a series of self-attention layers (h<sub>t</sub>), as well as the hidden representation of the [CLS_REP] token after being additionally passed to a completely connected layer with the _tanh_ activation function. Specifically, we use the last layer of the BERT-base model to obtained a fixed dimensional representation of the input sequence.
+
+Both the objects and the background of the images contain important information that can be useful in understanding the user's sentiments. Moreover, the two influence each other, together representing the meaningful features of an image. Consequently, we concatenate the two vectors, I<sub>O</sub> and I<sub>S</sub>, to obtain a representation of the image: </break>
+
+<p align="center">
+ <img src="https://latex.codecogs.com/svg.latex?I_{os}%20=%20I_o%20\oplus%20I_s" width=120>
+</p>
+
+To bring the feature vectors to the same dimensionality, we use d neurons, where d is equal to the size of the hidden layer of the BERT model, to transfer the visual features into a high-level space:
+
+<p align="center">
+ <img src="https://latex.codecogs.com/svg.latex?V_{os}=ReLU(W_{os}*I_{os}+b),\quad%20V_{OS}\in%20R^{d}">
+<p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<sup>where</sup> <img src="https://latex.codecogs.com/svg.latex?ReLU(x)=max(0,x)" width=160>.</p>
+</p>
+
+In the following, we will present the attention mechanism that extracts the keywords for detecting the polarity of the text, using the visual characteristics, and then aggregates the keywords with the contextual information at the level of the entire text. The method is inspiredd by the paper [_Hierarchical Attention Networks for Document Classification_](https://aclanthology.org/N16-1174) where the authors proposed an attention mechanism applied both at text level and at sentence level for classifying documents.
+
+To generate the deep hidden representation <i>u<sub>t</sub></i>, we feed each hidden state of a token <i>h̅<sub>t</sub></i>, where <i>h̅<sub>t</sub></i> in <i>h<sub>t</sub></i>, with the visual feature V<sub>OS</sub> to a linear layer:
+<p align="center">
+ <img src="https://latex.codecogs.com/svg.latex?u_t%20=%20Tanhshrink(W_w%20*%20\overline{h_t}%20+%20W_{os}%20*%20I_{os}%20+%20b),%20\quad%20u_t%20\in%20R^{num\_tokens%20\times%20d}">
+<p style="font-size:32px">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<sup> where <i>num_tokens</i> represents the size of the input sequence, number of tokens, and &nbsp;</sup> <img src="https://latex.codecogs.com/svg.latex?Tanhshrink(x)=x-Tanh(x)" width=220>.</p>
+</p>
+
+Then we use a softmax function to obtain a normalized attentional weight:
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\alpha_t%20=%20\frac{e^{u^{T}_{t}%20%20u_w}}{\sum{e^{u^{T}_{t}%20u_w}}},%20\quad%20\alpha_t%20\in%20R%20^{%20num\_tokens}">
+  <p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; <sup> where <i>u<sub>w</sub></i> is the informative word over the whole text, which is initialized with zeros and learned during the training process. </sup></p>
+</p>
+
+We compute the textual feature vector by the weighted average of the word hidden representations vectors based on the normalized attentional weight and the contextual representation (<i>cls_rep</i>), text-level comprehension deduced from all terms:
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?V_{\alpha}%20=%20\sum{\alpha_t%20h_t}%20*%20cls\_rep,%20\quad%20V_{\alpha}%20\in%20R^d">
+</p>
+
+We concatenate the visual and textual features and then aggregate these two features using a fusion layer to obtain a multimodal representation:
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?V_{mul}%20=%20ReLU(W%20*%20[V_{os}%20\oplus%20V_{\alpha}]%20+%20b),%20\quad%20V_{mul}%20\in%20R^d">
+</p>
+
+In the end, we add a fully connected layer to get a final multimodal representation and a softmax classifier to get the probabilities for each of the three-class labels:
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?V_{int}%20=%20ReLU(W_{mul}%20*%20V_{mul}%20+%20b_{mul}),%20\quad%20V_{int}%20\in%20R^{\frac{d}{2}}"> 
+</p>
+
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.latex?Pred%20=%20SoftMax%20(W_{int}%20*%20V_{int}%20+%20b_{int}),%20\quad%20Pred%20\in%20R^3">
+</p>
+
+## 3. Experiments and results
+
+### 3.1. Dataset
+The experiments were conducted on the MVSA data set containing 5129 manually annotated text-image pairs. All samples are posts collected from the social network Twitter which were showed to a single annotator who independently assigned one of the three labels (positive, negative, and neutral) to each component in the pair.
+
+In general, a post that contains both an image and the corresponding text can accentuate the user's feeling. However, some posts express contradictory feelings in the image and text posted. The aforementioned is because the user's intention when posting an image and its corresponding text is not always to share their emotions or emphasize the predominant feeling of posting. For example, in Figure 5.1 a) the text represents the description of the action in the image. For this reason, we can conclude that the two components of the post are related visually rather than emotionally. Another reason is that the predominant feeling of a post is influential, both in context.  For example, in Figure 5.1 b) we can identify the sentiment expressed by the image as a positive one, but the image just shows the protagonist of the action.
+
+![image](https://user-images.githubusercontent.com/48893255/136399627-964f97e0-904a-4248-a627-1ca9d275105a.png)
+
+<p align="center">
+  <b>Figure 2.</b> Samples from the MVSA dataset
+</p>
+
+Therefore, to ensure a correct evaluation, we use the approach presented in [[1]](#1), where posts in which one of the labels is positive and the other negative are eliminated.
+If one of the components of the post belongs to the neutral class, and the other component belongs to the positive and negative class, respectively, the general feeling of the post will be positive and negative, respectively.
+
+The data set is randomly split into a training set, a validation set, and a test set using an 8:1:1 ratio.
+
+Before pre-processing the data, it is essential to understand the distribution of classes. It can be viewed in the following table:
+
+&emsp;&emsp;&ensp; ![image](https://user-images.githubusercontent.com/48893255/136437927-7bb82830-5175-4085-9896-16322d232931.png)
+
+<p align="center">
+  <b>Tabel 1.</b> Class distribution in MVSA-Single Dataset
+</p>
+
+### 3.2 Proposed method
+#### 3.2.1 Feature extraction
+**Textual features.** The data is pre-processed in two stages before extracting the textual features necessary in the following training steps. The first stage consists of the following procedure:
+* Emoticons and emojis are replaced with the corresponding descriptive words.
+* The text is decoded and then normalized, i.e., the data is transformed from complex symbols into simple characters. Characters can be subjected to various forms of encoding, such as Latin, ISO/IEC 8859-1, etc. Therefore, for better analysis, it is necessary to keep the data in a standard encoding format. For this requirement, we choose UTF-8 encoding because it is widely accepted and often recommended.
+* The URL addresses are replaced by the <URL> token. Hyperlinks are removed, as well as the old-style for highlighting redistributed posts.
+* We eliminate all email addresses.
+* Bounded words are separated by inserting a space. Most posts on social networks such as Facebook, Twitter, or Instagram contain one or more words without spaces and are preceded by the # sign such as #MentalHealthAwarenessWeek or #BeautifulDay, called a hashtag. A hashtag is a tag that makes it easy to find posts in a specific category or with certain content. Therefore, the words in the hashtags provide essential information about the general feeling of the post.
+* We eliminate all numeric and special characters except the period, question mark, and exclamation mark.
+* Any letter repeated more than three times in a row is replaced by two repetitions of the same letter as the usual rules of English spelling forbid triple letters (for example "cooool" is replaced by "cool").
+
+**Visual features.**
 
 | Accuracy   |      Average Recall      | F</sup><sub>1</sub><sup>PN |
 |------------|:------------------------:|-------------:|
@@ -33,7 +125,10 @@ We compare the results obtained by the proposed model with the following basic m
 
   <div> <p> <b>Tabel 2. </b> Comparative results of different methods </p> </div>
   
-## Conclusions
+## 4. Conclusions
 
 The experiments showed that the visual information can consolidate the textual information from the multimodal data, and the correlation between the two components can improve the performance obtained in the opinion analysis task.
 At the same time, we can conclude that in trying to solve complex problems such as opinion analysis, choosing pre-trained models and using components from already defined network architectures can be very useful.
+  
+## 5. References
+  <a id="1">[1]</a> Xu, Nan and Mao, Wenji (2017). MultiSentiNet: A Deep Semantic Network for Multimodal Sentiment Analysis.
