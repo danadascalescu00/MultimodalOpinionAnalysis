@@ -131,9 +131,9 @@ Moving forward, we use the average recall value as a secondary measure to evalua
  <img src="https://latex.codecogs.com/svg.latex?AvgRec=\frac{1}{3}(R^{N}+R^{U}+R^{P})">
 </p>
 
-where <img src="https://latex.codecogs.com/svg.latex?R^{N}">, <img src="https://latex.codecogs.com/svg.latex?R^{U}"> and <img src="https://latex.codecogs.com/svg.latex?R^{P}"> are the recall values for the NEGATIVE, NEUTRAL and POSITIVE classes. <img src="https://latex.codecogs.com/svg.latex?F_1"> is also sensitive to class imbalance for the same reason presented above.
+where <img src="https://latex.codecogs.com/svg.latex?R^{N}">, <img src="https://latex.codecogs.com/svg.latex?R^{U}"> and <img src="https://latex.codecogs.com/svg.latex?R^{P}"> are the recall values for the NEGATIVE, NEUTRAL and POSITIVE classes. 
 
-The advantage of the AvgRec value over the standard accuracy is that it is more robust to the class imbalance. The accuracy of the majority class classifier is the relative frequency, known as the majority class prevalence, which can be greater than 0.5 if the test set is highly unbalanced. Another advantage of AvgRec over F<sub>1</sub> is that AvgRec is invariant in switching the POSITIVE class with the NEGATIVE class, while <img src="https://latex.codecogs.com/svg.latex?F_1^{PN}"> is not.
+The advantage of the AvgRec value over the standard accuracy is that it is more robust to the class imbalance. The accuracy of the majority class classifier is the relative frequency, known as the majority class prevalence, which can be greater than 0.5 if the test set is highly unbalanced. <img src="https://latex.codecogs.com/svg.latex?F_1"> is also sensitive to class imbalance for the same reason presented above. Another advantage of AvgRec over F<sub>1</sub> is that AvgRec is invariant in switching the POSITIVE class with the NEGATIVE class, while <img src="https://latex.codecogs.com/svg.latex?F_1^{PN}"> is not.
 
 #### 3.3.2 Experiments 
 The results of the proposed model can be observed in the following table:
