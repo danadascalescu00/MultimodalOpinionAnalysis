@@ -77,7 +77,7 @@ In general, a post that contains both an image and the corresponding text can ac
 ![image](https://user-images.githubusercontent.com/48893255/136399627-964f97e0-904a-4248-a627-1ca9d275105a.png)
 
 <p align="center">
-  <b>Figure 2.</b> Samples from the MVSA dataset [[3]](#3)
+  <b>Figure 2.</b> Samples from the MVSA dataset <a id="3">[3]</a>
 </p>
 
 Therefore, to ensure a correct evaluation, we use the approach presented in [[3]](#3), where posts in which one of the labels is positive and the other negative are eliminated.
