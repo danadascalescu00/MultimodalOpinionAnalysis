@@ -11,7 +11,7 @@
 
 ## 1. Introduction
 
-With the increasing amount of user-generated content on social media platforms, such as Twitter, commercial enterprises and researchers in various fields of study become more and more interested in automatically finding the general public's opinion on a particular topic. Until recently, the research was based on textual data, and only small efforts were made to analyze the various types of  data collected from posts on social media. Most of the previous approaches to multimodal opinion analysis are based on extracting features from each data type and combining them for classification using the late-fusion strategy. Consequently, some key semantic information was ignored, as well as the inherent correlations between all components of a post. Through this project, my bachelor's thesis, I wanted to make a real contribution to the existing methods of multimodal sentiment analysis by developing a deep neural network that weights the correlation between the image and the text. The development of the proposed model consists in integrating three models through transfer learning in a single approach to obtain the characteristics of each type of data and aggregating the two sources of information through an attention mechanism to extracting the inherent correlations from text and image of a post. The results of the experiments performed on a public dataset for multimodal sentiment analysis demonstrate the effectiveness of the proposed model.
+With the widespread availability of user-generated content on social media platforms such as Twitter, businesses and organizations as well as academics from a variety of fields are increasingly interested in automatically identifying the public's opinion on a given topic. Prior to the recent past, research was primarily dependent on textual data, and little effort was made to analyse the various types of data collected from social media posts. The majority of previous techniques to multimodal opinion analysis rely on extracting features from each data type and combining them using the late-fusion strategy for classification. Consequently, some key semantic information was ignored, as well as the inherent correlations between all components of a post. Through this project, my bachelor's thesis, I aimed to make a significant contribution to the existing methods of multimodal sentiment analysis by developing a deep neural network the correlation between the image and the text. The development of the proposed model involves integrating three models through transfer learning in a single approach to obtain the characteristics of each type of data and aggregating the two information sources through an attention mechanism to extract the inherent correlations from the text and image of a post. Experiments conducted on a publicly available dataset for multimodal sentiment analysis validate the effectiveness of the proposed model.
 
 ## 2. Proposed architecture
 
@@ -72,7 +72,7 @@ In the end, we add a fully connected layer to get a final multimodal representat
 ### 3.1. Dataset
 The experiments were conducted on the MVSA data set containing 5129 manually annotated text-image pairs. All samples are posts collected from the social network Twitter which were showed to a single annotator who independently assigned one of the three labels (positive, negative, and neutral) to each component in the pair.
 
-In general, a post that contains both an image and the corresponding text can accentuate the user's feeling. However, some posts express contradictory feelings in the image and text posted. The aforementioned is because the user's intention when posting an image and its corresponding text is not always to share their emotions or emphasize the predominant feeling of posting. For example, in Figure 5.1 a) the text represents the description of the action in the image. For this reason, we can conclude that the two components of the post are related visually rather than emotionally. Another reason is that the predominant feeling of a post is influential, both in context.  For example, in Figure 5.1 b) we can identify the sentiment expressed by the image as a positive one, but the image just shows the protagonist of the action.
+A post that contains both an image and the corresponding text can generally enhance the user's emotions. Nevertheless, some posts express contradictory feelings in the image and accompanying text. This is due to the fact that the user's intention when posting an image and its accompanying text is not necessarily to express or emphasise their emotions, highlight the dominant thoughts and feelings, or focus on a single topic. For example, in Figure 5.1 a) the text represents the description of the action in the image. Therefore, we can conclude that the two components of the post are more visually related than emotionally. A further reason is that the overall mood of a post influences how it is interpreted, both generally and specifically within its context.  For example, in Figure 5.1 b) we can infer that the image expresses a positive sentiment, yet it only depicts the action's protagonist.
 
 ![image](https://user-images.githubusercontent.com/48893255/136399627-964f97e0-904a-4248-a627-1ca9d275105a.png)
 
@@ -81,7 +81,7 @@ In general, a post that contains both an image and the corresponding text can ac
 </p>
 
 Therefore, to ensure a correct evaluation, we use the approach presented in [[3]](#3), where posts in which one of the labels is positive and the other negative are eliminated.
-If one of the components of the post belongs to the neutral class, and the other component belongs to the positive and negative class, respectively, the general feeling of the post will be positive and negative, respectively.
+If one of the post's components belongs to the neutral class and another to the positive and negative classes, respectively, the post's overall tone will be positive and negative, respectively.
 
 The data set is randomly split into a training set, a validation set, and a test set using an 8:1:1 ratio.
 
@@ -150,8 +150,8 @@ We compare the results obtained by the proposed model with the following basic m
   
 ## 4. Conclusions
 
-The experiments showed that the visual information can consolidate the textual information from the multimodal data, and the correlation between the two components can improve the performance obtained in the opinion analysis task.
-At the same time, we can conclude that in trying to solve complex problems such as opinion analysis, choosing pre-trained models and using components from already defined network architectures can be very useful.
+Experiments demonstrated that visual information can integrate textual information from multimodal data, and that the correlation between the two components can enhance performance in opinion analysis tasks.
+At the same time, we can conclude that choosing pre-trained models and utilising components from already defined network architectures through transfer learning can be highly valuable when attempting to address complex problems such as opinion analysis.
   
 ## 5. References
   <a id="1">[1]</a> Jacob Devlin et al. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.
